@@ -7,10 +7,14 @@ function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-window.TrelloPowerUp.iframe(null, {
+window.TrelloPowerUp.iframe({
+  appKey: '96e6f5f73e3878e9f40bd3d241f8b732',
+  appName: 'TimexEtapas Power-Up'
+}, {
   render: function(t, options) {
     const contentEl = document.getElementById('content');
-    return t.get('card', 'private', 'actions')
+    return t.card('id')
+      .then(card => t.getRestApi().getCardActions(card.id))
       .then(function(actions) {
         const cardMovements = [];
         const creation = actions.find(a => a.type === 'createCard');

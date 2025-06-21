@@ -17,12 +17,14 @@ window.TrelloPowerUp.initialize({
   },
 
   'card-badges': function(t) {
-    return t.get('member', 'private', 'token')
-      .then(function(token) {
-        return t.get('card', 'private', 'actions')
+    return t.card('id')
+      .then(function(card) {
+        return t.getRestApi()
+          .getCardActions(card.id)
           .then(function(actions) {
             const creation = actions.find(a => a.type === 'createCard');
             if (!creation) return [];
+
             let lastMoveDate = new Date(creation.date);
             const moves = actions
               .filter(a => a.type === 'updateCard' && a.data.listAfter && a.data.listBefore)
@@ -30,6 +32,7 @@ window.TrelloPowerUp.initialize({
             if (moves.length > 0) {
               lastMoveDate = new Date(moves[moves.length - 1].date);
             }
+
             const now = new Date();
             const durationMs = now - lastMoveDate;
             const minutes = Math.floor(durationMs / (1000 * 60));
