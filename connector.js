@@ -10,14 +10,14 @@ window.TrelloPowerUp.initialize({
     return {
       // El título que aparecerá en la sección
       title: 'Tiempo por Etapa',
-      // Un ícono para el título (puedes usar el mismo de antes)
+      // El ícono que usamos antes. Asegúrate de que el nombre coincida.
       icon: './icon.svg', 
       // El contenido de la sección será un iframe
       content: {
         type: 'iframe',
         // Le decimos a Trello que cargue este archivo HTML dentro del iframe
         url: t.signUrl('./card-back-section.html'),
-        // Altura inicial del iframe
+        // Altura inicial del iframe en píxeles
         height: 80 
       }
     };
