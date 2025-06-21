@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+      body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+      button { font-size: 14px; padding: 8px 12px; border-radius: 3px; border: none; background-color: #0079bf; color: white; cursor: pointer; }
+      button:hover { background-color: #026aa7; }
+    </style>
+  </head>
+  <body>
+    <button id="auth-btn">Autorizar Power-Up</button>
+    <script>
+      const t = window.TrelloPowerUp.iframe({
+        appKey: '96e6f5f73e3878e9f40bd3d241f8b732',
+        appName: 'TimexEtapas Power-Up'
+      });
+      
+      document.getElementById('auth-btn').addEventListener('click', function() {
+        t.authorize('https://trello.com/1/authorize?expiration=never&name=TimexEtapas&scope=read&response_type=token')
+          .then(function(token) {
+            // Guardamos el token para futuras sesiones
+            return t.set('member', 'private', 'token', token);
+          })
+          .then(function() {
+            // Cerramos el popup de autorización
+            t.closePopup();
+          });
+      });
+    </script>
+  </body>
+</html>
