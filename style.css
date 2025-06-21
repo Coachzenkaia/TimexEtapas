@@ -21,3 +21,7 @@ li:last-child {
 strong {
   font-weight: 600;
 }
+li {
+  display: flex;
+  justify-content: space-between;
+}
