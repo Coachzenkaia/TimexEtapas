@@ -1,34 +1,39 @@
-// connector.js (CÓDIGO CORREGIDO Y FINAL)
+// connector.js (Versión con Autorización)
 
-// Creamos una función para la capacidad, así es más limpio.
-const showCardBackSection = function(t) {
-    // 't' aquí es un objeto Trello completamente inicializado.
-    return t.popup({
-        title: 'Tiempo por Etapa',
-        url: './time-history.html', // Usamos una URL relativa
-        height: 230
-    });
-};
+const TRELLO_API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
 
-// Inicializamos el Power-Up de la forma correcta
 window.TrelloPowerUp.initialize({
-    'card-back-section': function(t, options) {
-        // Esta función SÓLO devuelve la descripción de la sección.
-        // NO realiza operaciones complejas como signUrl.
-        return {
-            title: 'Tiempo por Etapa',
-            icon: t.signUrl(t.root, './icon.svg'), // Forma correcta de firmar un icono
-            content: {
-                type: 'iframe',
-                // La URL del iframe se carga aparte y no necesita firmarse aquí.
-                url: './time-history.html', 
-                height: 230
-            }
-        };
-    }
+  'authorization-status': function(t, options) {
+    // Esta función comprueba si ya tenemos un token de autorización.
+    return t.get('member', 'private', 'token')
+      .then(function(token) {
+        if (token) {
+          return { authorized: true }; // Ya estamos autorizados
+        }
+        return { authorized: false }; // No estamos autorizados
+      });
+  },
+  'show-authorization': function(t, options) {
+    // Esta función abre el popup de autorización de Trello.
+    return t.popup({
+      title: 'Autorizar TimexEtapas',
+      url: './auth.html', // Un nuevo archivo que crearemos
+      height: 140,
+    });
+  },
+  'card-back-section': function(t, options) {
+    return {
+      title: 'Tiempo por Etapa',
+      icon: './icon.svg',
+      content: {
+        type: 'iframe',
+        url: './time-history.html',
+        height: 230
+      }
+    };
+  }
 }, {
-    // Opciones de la aplicación
-    // Forzamos el uso de la API v1 para evitar problemas de compatibilidad
-    appKey: 'd52c114526278a278148386c1341c52d',
+    // Necesitamos especificar que nuestra app usará la API
+    appKey: TRELLO_API_KEY,
     appName: 'TimexEtapas Power-Up'
 });
