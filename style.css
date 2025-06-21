@@ -1,0 +1,23 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+  Arial, sans-serif;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 4px 0;
+  border-bottom: 1px solid #dfe1e6;
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+strong {
+  font-weight: 600;
+}
