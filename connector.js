@@ -1,25 +1,34 @@
-// connector.js
+// connector.js (CÓDIGO CORREGIDO Y FINAL)
 
+// Creamos una función para la capacidad, así es más limpio.
+const showCardBackSection = function(t) {
+    // 't' aquí es un objeto Trello completamente inicializado.
+    return t.popup({
+        title: 'Tiempo por Etapa',
+        url: './time-history.html', // Usamos una URL relativa
+        height: 230
+    });
+};
+
+// Inicializamos el Power-Up de la forma correcta
 window.TrelloPowerUp.initialize({
-  /* 
-    Definimos la capacidad 'card-back-section'.
-    Esto le dice a Trello que queremos añadir una nueva sección 
-    en la parte trasera de las tarjetas.
-  */
-  'card-back-section': function(t, options) {
-    return {
-      // El título que aparecerá en la sección
-      title: 'Tiempo por Etapa',
-      // El ícono que usamos antes. Asegúrate de que el nombre coincida.
-      icon: './icon.svg', 
-      // El contenido de la sección será un iframe
-      content: {
-        type: 'iframe',
-        // Le decimos a Trello que cargue este archivo HTML dentro del iframe
-        url: t.signUrl('./card-back-section.html'),
-        // Altura inicial del iframe en píxeles
-        height: 80 
-      }
-    };
-  }
+    'card-back-section': function(t, options) {
+        // Esta función SÓLO devuelve la descripción de la sección.
+        // NO realiza operaciones complejas como signUrl.
+        return {
+            title: 'Tiempo por Etapa',
+            icon: t.signUrl(t.root, './icon.svg'), // Forma correcta de firmar un icono
+            content: {
+                type: 'iframe',
+                // La URL del iframe se carga aparte y no necesita firmarse aquí.
+                url: './time-history.html', 
+                height: 230
+            }
+        };
+    }
+}, {
+    // Opciones de la aplicación
+    // Forzamos el uso de la API v1 para evitar problemas de compatibilidad
+    appKey: 'd52c114526278a278148386c1341c52d',
+    appName: 'TimexEtapas Power-Up'
 });
