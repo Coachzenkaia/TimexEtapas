@@ -8,16 +8,14 @@ const contentEl = document.getElementById('content');
 
 // t.render() se ejecuta cuando la sección se carga
 t.render(function() {
-  // Pedimos a Trello los datos de la tarjeta actual
-  // 'card' nos da acceso a id, name, desc, etc.
+  // Pedimos a Trello los datos de la tarjeta actual.
+  // El parámetro 'name' le dice que solo nos interesa el nombre.
   return t.card('name')
     .then(function(card) {
-      // 'card' ahora es un objeto que contiene el nombre.
-      // Por ejemplo: { name: 'Mi increíble tarjeta' }
+      // 'card' es un objeto que contiene el nombre, ej: { name: 'Mi tarjeta' }
       
-      // Actualizamos el contenido de nuestro div
+      // Actualizamos el contenido de nuestro div con el nombre de la tarjeta
       contentEl.innerHTML = `
-        <h3>Datos de la Tarjeta</h3>
         <p>Estás viendo la tarjeta: <strong>${card.name}</strong></p>
       `;
     })
