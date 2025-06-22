@@ -3,10 +3,44 @@
 <head>
     <meta charset="utf-8">
     <title>TimexEtapas</title>
-    <link rel="stylesheet" href="css/style.css">
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
-    <script src="js/connector.js"></script>
+    <script>
+        // Verificar que estamos en el contexto correcto
+        if (window.TrelloPowerUp) {
+            TrelloPowerUp.initialize({
+                'card-buttons': function(t, opts) {
+                    return [{
+                        text: 'TimexEtapas',
+                        callback: function(t) {
+                            return t.alert({
+                                message: '¡TimexEtapas funciona!',
+                                duration: 3
+                            });
+                        }
+                    }];
+                },
+                
+                'card-badges': function(t, opts) {
+                    return t.card('dateLastActivity')
+                        .then(function(card) {
+                            var lastActivity = new Date(card.dateLastActivity);
+                            var now = new Date();
+                            var diffMs = now - lastActivity;
+                            var hours = Math.floor(diffMs / (1000 * 60 * 60));
+                            
+                            if (hours >= 1) {
+                                return [{
+                                    text: hours + 'h',
+                                    color: hours > 24 ? 'red' : 'green'
+                                }];
+                            }
+                            return [];
+                        });
+                }
+            });
+        }
+    </script>
 </body>
 </html>
