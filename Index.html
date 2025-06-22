@@ -1,46 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>TimexEtapas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimexEtapas - Trello Power-Up</title>
+    <!-- Librería oficial de Trello Power-Up -->
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px; 
+            background: #f4f5f7;
+            color: #172b4d;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status { 
+            background: #e3fcef; 
+            color: #006644;
+            padding: 15px; 
+            border-radius: 5px; 
+            text-align: center;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #0079bf;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6b778c;
+            margin-bottom: 20px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #dfe1e6;
+        }
+        .feature-list li:before {
+            content: "⏱️ ";
+            margin-right: 8px;
+        }
+        .tech-info {
+            background: #f4f5f7;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #6b778c;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <script>
-        // Verificar que estamos en el contexto correcto
-        if (window.TrelloPowerUp) {
-            TrelloPowerUp.initialize({
-                'card-buttons': function(t, opts) {
-                    return [{
-                        text: 'TimexEtapas',
-                        callback: function(t) {
-                            return t.alert({
-                                message: '¡TimexEtapas funciona!',
-                                duration: 3
-                            });
-                        }
-                    }];
-                },
-                
-                'card-badges': function(t, opts) {
-                    return t.card('dateLastActivity')
-                        .then(function(card) {
-                            var lastActivity = new Date(card.dateLastActivity);
-                            var now = new Date();
-                            var diffMs = now - lastActivity;
-                            var hours = Math.floor(diffMs / (1000 * 60 * 60));
-                            
-                            if (hours >= 1) {
-                                return [{
-                                    text: hours + 'h',
-                                    color: hours > 24 ? 'red' : 'green'
-                                }];
-                            }
-                            return [];
-                        });
-                }
-            });
-        }
-    </script>
+    <div class="container">
+        <h1>⏱️ TimexEtapas</h1>
+        <p class="subtitle">Power-Up para seguimiento de tiempo de tarjetas en Trello</p>
+        
+        <div class="status">
+            ✅ Power-Up cargado correctamente desde Netlify
+        </div>
+        
+        <h3>Funcionalidades activas:</h3>
+        <ul class="feature-list">
+            <li><strong>Tiempo en tablero:</strong> Muestra cuánto tiempo lleva la tarjeta desde su creación</li>
+            <li><strong>Tiempo en lista actual:</strong> Rastrea el tiempo en la lista donde está ahora</li>
+            <li><strong>Historial de listas:</strong> Mantiene registro del tiempo en listas anteriores</li>
+            <li><strong>Códigos de color:</strong> Verde (0-3 días), Amarillo (4-7 días), Rojo (8+ días)</li>
+            <li><strong>Actualización automática:</strong> Se actualiza cada 5 minutos</li>
+        </ul>
+        
+        <div class="tech-info">
+            <strong>🔧 Información técnica:</strong><br>
+            • Desarrollado con Trello Power-Up API<br>
+            • Hospedado en Netlify con deploy automático<br>
+            • Datos persistentes usando Trello's pluginData<br>
+            • Compatible con todos los navegadores modernos
+        </div>
+    </div>
+
+    <!-- Cargar la lógica del Power-Up -->
+    <script src="client.js"></script>
 </body>
 </html>
