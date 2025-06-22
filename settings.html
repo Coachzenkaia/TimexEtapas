@@ -235,6 +235,53 @@
                 </select>
             </div>
 
+            <!-- NUEVAS CONFIGURACIONES DE ALERTAS -->
+            <div class="form-group">
+                <label>⚠️ Configuración de alertas</label>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin-top: 8px;">
+                    
+                    <!-- Tiempo de advertencia -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="warningDays" style="font-weight: 500; color: #856404;">Advertencia después de:</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <input type="number" id="warningDays" class="form-control" value="2" min="1" max="30" style="width: 80px;">
+                            <span>días sin actividad</span>
+                        </div>
+                        <small style="color: #856404;">La tarjeta se marcará en amarillo como advertencia</small>
+                    </div>
+
+                    <!-- Tiempo crítico -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="criticalDays" style="font-weight: 500; color: #721c24;">Crítico después de:</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <input type="number" id="criticalDays" class="form-control" value="5" min="1" max="60" style="width: 80px;">
+                            <span>días sin actividad</span>
+                        </div>
+                        <small style="color: #721c24;">La tarjeta se marcará en rojo como crítica</small>
+                    </div>
+
+                    <!-- Tipo de alerta -->
+                    <div>
+                        <label style="font-weight: 500; color: #495057;">Mostrar alertas en:</label>
+                        <div style="margin-top: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                <input type="checkbox" id="alertBadge" checked>
+                                <label for="alertBadge">Badge principal (cara de tarjeta)</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                <input type="checkbox" id="alertDetail" checked>
+                                <label for="alertDetail">Detalles de tarjeta (reverso)</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="alertMessage" checked>
+                                <label for="alertMessage">Mensaje de alerta específico</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- Botones -->
             <div class="button-group">
                 <button type="button" class="btn btn-secondary" id="cancelBtn">Cancelar</button>
@@ -254,7 +301,13 @@
             startTime: '09:00',
             endTime: '18:00',
             workDays: [1, 2, 3, 4, 5],
-            timezone: 'America/Guatemala'
+            timezone: 'America/Guatemala',
+            // NUEVAS configuraciones de alertas
+            warningDays: 2,
+            criticalDays: 5,
+            alertBadge: true,
+            alertDetail: true,
+            alertMessage: true
         };
 
         let t;
@@ -287,9 +340,18 @@
                     document.getElementById('endTime').value = config.endTime;
                     document.getElementById('timezone').value = config.timezone;
                     
-                    const workDaysCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+                    // Configuraciones de alertas
+                    document.getElementById('warningDays').value = config.warningDays || 2;
+                    document.getElementById('criticalDays').value = config.criticalDays || 5;
+                    document.getElementById('alertBadge').checked = config.alertBadge !== false;
+                    document.getElementById('alertDetail').checked = config.alertDetail !== false;
+                    document.getElementById('alertMessage').checked = config.alertMessage !== false;
+                    
+                    const workDaysCheckboxes = document.querySelectorAll('input[type="checkbox"][value]');
                     workDaysCheckboxes.forEach(checkbox => {
-                        checkbox.checked = config.workDays.includes(parseInt(checkbox.value));
+                        if (checkbox.value !== '') { // Solo días de la semana
+                            checkbox.checked = config.workDays.includes(parseInt(checkbox.value));
+                        }
                     });
                     
                     console.log('✅ Configuración cargada:', config);
@@ -335,9 +397,16 @@
                 calculationMode: document.querySelector('input[name="calculationMode"]:checked').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
-                workDays: Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                workDays: Array.from(document.querySelectorAll('input[type="checkbox"][value]:checked'))
+                              .filter(cb => cb.value !== '') // Solo días de la semana
                               .map(cb => parseInt(cb.value)),
                 timezone: document.getElementById('timezone').value,
+                // NUEVAS configuraciones de alertas
+                warningDays: parseInt(document.getElementById('warningDays').value),
+                criticalDays: parseInt(document.getElementById('criticalDays').value),
+                alertBadge: document.getElementById('alertBadge').checked,
+                alertDetail: document.getElementById('alertDetail').checked,
+                alertMessage: document.getElementById('alertMessage').checked,
                 lastUpdated: Date.now()
             };
             

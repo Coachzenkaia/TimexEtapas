@@ -38,12 +38,41 @@ function formatTime(milliseconds) {
 }
 
 /**
- * Determina el color del badge según los días transcurridos
+ * Determina el color del badge según los días transcurridos y configuración de alertas
  */
-function getColorByTime(days) {
-    if (days >= 8) return 'red';      // 8+ días = rojo (crítico)
-    if (days >= 4) return 'yellow';   // 4-7 días = amarillo (atención)
-    return 'green';                   // 0-3 días = verde (normal)
+function getColorByTime(days, settings = null) {
+    if (!settings) {
+        // Valores por defecto si no hay configuración
+        if (days >= 8) return 'red';
+        if (days >= 4) return 'yellow';
+        return 'green';
+    }
+    
+    // Usar configuración personalizada de alertas
+    const warningDays = settings.warningDays || 2;
+    const criticalDays = settings.criticalDays || 5;
+    
+    if (days >= criticalDays) return 'red';    // Crítico
+    if (days >= warningDays) return 'yellow';  // Advertencia
+    return 'green';                            // Normal
+}
+
+/**
+ * Genera mensaje de alerta basado en el tiempo transcurrido
+ */
+function getAlertMessage(days, settings = null) {
+    if (!settings || !settings.alertMessage) return null;
+    
+    const warningDays = settings.warningDays || 2;
+    const criticalDays = settings.criticalDays || 5;
+    
+    if (days >= criticalDays) {
+        return `🚨 CRÍTICO: ${days} días sin mover`;
+    } else if (days >= warningDays) {
+        return `⚠️ ATENCIÓN: ${days} días sin actividad`;
+    }
+    
+    return null;
 }
 
 /**
@@ -159,33 +188,43 @@ TrelloPowerUp.initialize({
     'card-badges': function(t, options) {
         console.log('🔍 TimexEtapas: Calculando badge principal...');
         
-        return getOrInitializeTimeData(t)
-            .then(function(timeData) {
-                const now = Date.now();
-                
-                // Calcular tiempo total en tablero
-                const totalTime = now - timeData.createdAt;
-                const totalDays = Math.floor(totalTime / (1000 * 60 * 60 * 24));
-                const formattedTime = formatTime(totalTime);
-                const badgeColor = getColorByTime(totalDays);
-                
-                console.log(`⏱️ TimexEtapas: ${formattedTime} en tablero (${badgeColor})`);
-                
-                return [{
-                    text: formattedTime,
-                    color: badgeColor,
-                    refresh: 300, // Actualizar cada 5 minutos
-                    title: `Tiempo total en tablero: ${formattedTime}`
-                }];
-            })
-            .catch(function(error) {
-                console.error('❌ TimexEtapas: Error en card-badges:', error);
-                return [{
-                    text: 'Error',
-                    color: 'red',
-                    title: 'Error al calcular tiempo'
-                }];
-            });
+        return Promise.all([
+            getOrInitializeTimeData(t),
+            t.get('member', 'private', 'timexEtapasSettings')
+        ]).then(function([timeData, settings]) {
+            const now = Date.now();
+            
+            // Calcular tiempo total en tablero
+            const totalTime = now - timeData.createdAt;
+            const totalDays = Math.floor(totalTime / (1000 * 60 * 60 * 24));
+            const formattedTime = formatTime(totalTime);
+            const badgeColor = getColorByTime(totalDays, settings);
+            
+            // Verificar si necesita alerta
+            const alertMessage = getAlertMessage(totalDays, settings);
+            
+            console.log(`⏱️ TimexEtapas: ${formattedTime} en tablero (${badgeColor})`);
+            if (alertMessage) {
+                console.log(`🚨 TimexEtapas: ${alertMessage}`);
+            }
+            
+            const badge = {
+                text: formattedTime,
+                color: badgeColor,
+                refresh: 300, // Actualizar cada 5 minutos
+                title: alertMessage || `Tiempo total en tablero: ${formattedTime}`
+            };
+            
+            return [badge];
+        })
+        .catch(function(error) {
+            console.error('❌ TimexEtapas: Error en card-badges:', error);
+            return [{
+                text: 'Error',
+                color: 'red',
+                title: 'Error al calcular tiempo'
+            }];
+        });
     },
     
     // ==================== BADGES DETALLADOS (REVERSO DE LA TARJETA) ====================
@@ -195,8 +234,9 @@ TrelloPowerUp.initialize({
         return Promise.all([
             t.card('idList'),
             t.lists('id', 'name'),
-            getOrInitializeTimeData(t)
-        ]).then(function([cardInfo, allLists, timeData]) {
+            getOrInitializeTimeData(t),
+            t.get('member', 'private', 'timexEtapasSettings')
+        ]).then(function([cardInfo, allLists, timeData, settings]) {
             const currentListId = cardInfo.idList;
             
             // Encontrar el nombre de la lista actual
@@ -211,68 +251,88 @@ TrelloPowerUp.initialize({
             const now = Date.now();
             let badges = [];
             
-            // Badge 1: Tiempo total en tablero
-            const totalTime = now - updatedTimeData.createdAt;
-            badges.push({
-                title: 'Tiempo total en tablero',
-                text: formatTime(totalTime),
-                color: 'blue'
-            });
-            
-            // Badge 2: Tiempo en lista actual
-            const timeInCurrentList = now - updatedTimeData.movedToCurrentListAt;
-            badges.push({
-                title: 'Tiempo en lista actual',
-                text: formatTime(timeInCurrentList),
-                color: 'green'
-            });
-            
-            // Badge 3+: Historial de listas anteriores (CON NOMBRES)
-            if (updatedTimeData.listHistory && Object.keys(updatedTimeData.listHistory).length > 0) {
-                for (const [listId, listData] of Object.entries(updatedTimeData.listHistory)) {
-                    // Manejar tanto formato nuevo como antiguo
-                    let listName, accumulatedTime;
-                    
-                    if (typeof listData === 'object' && listData.name) {
-                        // Formato nuevo: { time: number, name: string }
-                        listName = listData.name;
-                        accumulatedTime = listData.time;
-                    } else {
-                        // Formato antiguo: solo el tiempo como número
-                        listName = `Lista anterior`;
-                        accumulatedTime = listData;
-                    }
-                    
-                    // Validar que accumulatedTime sea un número válido
-                    if (typeof accumulatedTime === 'number' && !isNaN(accumulatedTime) && accumulatedTime > 0) {
-                        badges.push({
-                            title: listName,
-                            text: formatTime(accumulatedTime),
-                            color: 'light-gray'
-                        });
-                    }
-                }
-            }
-
-            // Badge de CONFIGURACIÓN al final
-            badges.push({
-                title: '⚙️ Configurar TimexEtapas',
-                text: 'Horarios laborales',
-                color: 'orange',
-                callback: function(t) {
-                    console.log('⚙️ TimexEtapas: Abriendo configuración desde badge...');
-                    
-                    return t.popup({
-                        title: 'Configuración de TimexEtapas',
-                        url: './settings.html',
-                        height: 700,
-                        width: 500
+            // Obtener configuración de alertas
+            return t.get('member', 'private', 'timexEtapasSettings').then(function(settings) {
+                
+                // Badge 1: Tiempo total en tablero (CON ALERTAS)
+                const totalTime = now - updatedTimeData.createdAt;
+                const totalDays = Math.floor(totalTime / (1000 * 60 * 60 * 24));
+                const alertMessage = getAlertMessage(totalDays, settings);
+                
+                badges.push({
+                    title: alertMessage || 'Tiempo total en tablero',
+                    text: formatTime(totalTime),
+                    color: getColorByTime(totalDays, settings)
+                });
+                
+                // Badge 2: Tiempo en lista actual
+                const timeInCurrentList = now - updatedTimeData.movedToCurrentListAt;
+                const daysInCurrentList = Math.floor(timeInCurrentList / (1000 * 60 * 60 * 24));
+                const listAlertMessage = getAlertMessage(daysInCurrentList, settings);
+                
+                badges.push({
+                    title: listAlertMessage || 'Tiempo en lista actual',
+                    text: formatTime(timeInCurrentList),
+                    color: getColorByTime(daysInCurrentList, settings)
+                });
+                
+                // Badge de alerta específica (si está habilitada y hay alerta)
+                if (settings && settings.alertDetail && (alertMessage || listAlertMessage)) {
+                    const mainAlert = alertMessage || listAlertMessage;
+                    badges.push({
+                        title: '🚨 Estado de Alerta',
+                        text: mainAlert.includes('CRÍTICO') ? 'CRÍTICO' : 'ADVERTENCIA',
+                        color: mainAlert.includes('CRÍTICO') ? 'red' : 'orange'
                     });
                 }
+                
+                // Badge 3+: Historial de listas anteriores (CON NOMBRES)
+                if (updatedTimeData.listHistory && Object.keys(updatedTimeData.listHistory).length > 0) {
+                    for (const [listId, listData] of Object.entries(updatedTimeData.listHistory)) {
+                        // Manejar tanto formato nuevo como antiguo
+                        let listName, accumulatedTime;
+                        
+                        if (typeof listData === 'object' && listData.name) {
+                            // Formato nuevo: { time: number, name: string }
+                            listName = listData.name;
+                            accumulatedTime = listData.time;
+                        } else {
+                            // Formato antiguo: solo el tiempo como número
+                            listName = `Lista anterior`;
+                            accumulatedTime = listData;
+                        }
+                        
+                        // Validar que accumulatedTime sea un número válido
+                        if (typeof accumulatedTime === 'number' && !isNaN(accumulatedTime) && accumulatedTime > 0) {
+                            badges.push({
+                                title: listName,
+                                text: formatTime(accumulatedTime),
+                                color: 'light-gray'
+                            });
+                        }
+                    }
+                }
+
+                // Badge de CONFIGURACIÓN al final
+                badges.push({
+                    title: '⚙️ Configurar TimexEtapas',
+                    text: 'Horarios y alertas',
+                    color: 'orange',
+                    callback: function(t) {
+                        console.log('⚙️ TimexEtapas: Abriendo configuración desde badge...');
+                        
+                        return t.popup({
+                            title: 'Configuración de TimexEtapas',
+                            url: './settings.html',
+                            height: 750,
+                            width: 500
+                        });
+                    }
+                });
+                
+                console.log(`📊 TimexEtapas: Mostrando ${badges.length} badges detallados`);
+                return badges;
             });
-            
-            console.log(`📊 TimexEtapas: Mostrando ${badges.length} badges detallados`);
-            return badges;
         })
         .catch(function(error) {
             console.error('❌ TimexEtapas: Error en card-detail-badges:', error);
