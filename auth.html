@@ -1,29 +1,35 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
+    <title>Autorizar TimexEtapas</title>
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <style>
-      body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-      button { font-size: 14px; padding: 8px 12px; border-radius: 3px; border: none; background-color: #0079bf; color: white; cursor: pointer; }
-      button:hover { background-color: #026aa7; }
+      body   { display:flex;justify-content:center;align-items:center;height:100vh;margin:0;font-family:Arial, sans-serif; }
+      button { background:#0079bf;color:#fff;border:none;border-radius:4px;padding:10px 18px;font-size:14px;cursor:pointer; }
+      button:hover { background:#026aa7; }
     </style>
   </head>
   <body>
-    <button id="auth-btn">Autorizar Power-Up</button>
-    <script>
-      const t = window.TrelloPowerUp.iframe({
-        appKey: 'REEMPLAZAR_CON_TU_API_KEY',
-        appName: 'TimexEtapas Power-Up'
-      });
+    <button id="auth-btn">Autorizar</button>
 
-      document.getElementById('auth-btn').addEventListener('click', function() {
-        t.authorize('https://trello.com/1/authorize?expiration=never&name=TimexEtapas&scope=read,account&response_type=token')
-          .then(function(token) {
-            return t.set('member', 'private', 'token', token);
-          })
-          .then(function() {
-            t.closePopup();
-          });
+    <script>
+      const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
+      const t = TrelloPowerUp.iframe({ appKey: API_KEY, appName: 'TimexEtapas' });
+
+      document.getElementById('auth-btn').addEventListener('click', () => {
+        window.Trello.authorize({
+          type: 'popup',
+          name: 'TimexEtapas',
+          scope: { read: true },
+          expiration: 'never',
+          persist: true,
+          success: () => {
+            const token = window.Trello.token();
+            t.set('member', 'private', 'token', token).then(() => t.closePopup());
+          },
+          error: () => alert('No se pudo autorizar')
+        });
       });
     </script>
   </body>
