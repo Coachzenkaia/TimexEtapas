@@ -1,17 +1,50 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" />
-    <title>Historial de Listas</title>
-    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
-    <link rel="stylesheet" href="./style.css">
+    <meta charset="utf-8">
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 10px; }
+      ul { padding-left: 20px; }
+    </style>
   </head>
   <body>
-    <div id="content">
-      <p>Cargando historial...</p>
-    </div>
+    <div id="historial">Cargando historial...</div>
 
-    <script src="https://p.trellocdn.com/power-up.min.js"></script>
-    <script src="./card-back-section.js"></script>
+    <script>
+      const t = TrelloPowerUp.iframe();
+
+      async function cargarHistorial() {
+        try {
+          const token = await t.get('member', 'private', 'token');
+          const card = await t.card('id');
+
+          const url = `https://api.trello.com/1/cards/${card.id}/actions?filter=updateCard:idList&key=REEMPLAZAR_CON_TU_API_KEY&token=${token}`;
+
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('No se pudo cargar');
+
+          const data = await response.json();
+          const conteo = {};
+
+          data.forEach(a => {
+            const lista = a.data.listAfter.name;
+            if (!conteo[lista]) conteo[lista] = 0;
+            conteo[lista]++;
+          });
+
+          const historial = Object.entries(conteo)
+            .map(([lista, veces]) => `<li><strong>${lista}</strong>: ${veces} vez${veces > 1 ? 'es' : ''}</li>`) 
+            .join('');
+
+          document.getElementById('historial').innerHTML = `<ul>${historial}</ul>`;
+        } catch (error) {
+          document.getElementById('historial').innerText = 'Error cargando historial';
+          console.error('Error cargando historial:', error);
+        }
+      }
+
+      cargarHistorial();
+    </script>
   </body>
 </html>

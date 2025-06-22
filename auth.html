@@ -11,10 +11,13 @@
   <body>
     <button id="auth-btn">Autorizar Power-Up</button>
     <script>
-      const t = TrelloPowerUp.iframe();
+      const t = window.TrelloPowerUp.iframe({
+        appKey: 'REEMPLAZAR_CON_TU_API_KEY',
+        appName: 'TimexEtapas Power-Up'
+      });
 
       document.getElementById('auth-btn').addEventListener('click', function() {
-        t.authorize('https://trello.com/1/authorize?expiration=never&name=TimexEtapas&scope=read&response_type=token&key=96e6f5f73e3878e9f40bd3d241f8b732')
+        t.authorize('https://trello.com/1/authorize?expiration=never&name=TimexEtapas&scope=read,account&response_type=token')
           .then(function(token) {
             return t.set('member', 'private', 'token', token);
           })
