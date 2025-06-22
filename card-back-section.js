@@ -1,57 +1,94 @@
-const t = TrelloPowerUp.iframe();
+// card-back-section.js
 
-const msToTime = ms => {
-  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((ms / (1000 * 60)) % 60);
-  return `${days}d ${hours}h ${minutes}m`;
-};
+const t = window.TrelloPowerUp.iframe();
+// ***** API KEY ACTUALIZADA *****
+const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
+const contentDiv = document.getElementById('content');
 
-const loadListTimes = async () => {
-  try {
-    const card = await t.card('id', 'name', 'idList');
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'token');
-
-    const res = await fetch(`https://api.trello.com/1/cards/${card.id}/actions?filter=updateCard:idList&key=96e6f5f73e3878e9f40bd3d241f8b732&token=${token}`);
-    const actions = await res.json();
-
-    // Ordenamos cronológicamente
-    const sorted = actions.reverse();
-
-    const durations = [];
-    let lastTimestamp = new Date(card.dateLastActivity).getTime();
-
-    for (const action of sorted) {
-      const fromList = action.data.listBefore.name;
-      const toList = action.data.listAfter.name;
-      const timeInToList = lastTimestamp - new Date(action.date).getTime();
-
-      durations.push({ list: toList, duration: timeInToList });
-      lastTimestamp = new Date(action.date).getTime();
-    }
-
-    // Tiempo en la lista original
-    const createdAt = new Date(1000 * parseInt(card.id.substring(0, 8), 16)).getTime();
-    durations.push({ list: sorted[0]?.data?.listBefore?.name || 'Lista de origen', duration: lastTimestamp - createdAt });
-
-    // Agrupar por lista
-    const aggregate = {};
-    durations.forEach(({ list, duration }) => {
-      aggregate[list] = (aggregate[list] || 0) + duration;
+/**
+ * Muestra un botón para que el usuario autorice el Power-Up.
+ */
+function mostrarBotonAutorizar() {
+    contentDiv.innerHTML = `
+        <p>Para ver el historial, primero debes autorizar el Power-Up.</p>
+        <button id="authorize-btn" class="mod-primary">Autorizar</button>
+    `;
+    document.getElementById('authorize-btn').addEventListener('click', function() {
+        // Esto le pide a Trello que muestre la ventana de autorización
+        // que definimos en 'show-authorization' en connector.js
+        t.showAuthorization();
     });
+}
 
-    const content = document.getElementById('content');
-    content.innerHTML = '<h3>Tiempo por Lista</h3><ul>' +
-      Object.entries(aggregate)
-        .map(([list, duration]) => `<li><strong>${list}:</strong> ${msToTime(duration)}</li>`)
-        .join('') +
-      '</ul>';
+/**
+ * Procesa y muestra el historial de movimientos de la tarjeta.
+ * @param {Array} actions - El array de acciones de la API de Trello.
+ */
+function renderHistorial(actions) {
+    // Filtramos solo las acciones que indican un cambio de lista
+    const historialLista = actions.filter(a => a.type === 'updateCard' && a.data.listBefore && a.data.listAfter);
 
-  } catch (e) {
-    console.error('Error cargando historial:', e);
-    document.getElementById('content').innerHTML = '<p>Error cargando historial.</p>';
-  }
-};
+    if (historialLista.length > 0) {
+        let html = '<h4>Historial de Movimientos:</h4><ul>';
+        historialLista.forEach(accion => {
+            const fecha = new Date(accion.date).toLocaleString();
+            html += `<li>De <b>${accion.data.listBefore.name}</b> a <b>${accion.data.listAfter.name}</b> <br><small>(${fecha})</small></li>`;
+        });
+        html += '</ul>';
+        contentDiv.innerHTML = html;
+    } else {
+        contentDiv.innerHTML = '<p>Esta tarjeta aún no ha sido movida entre listas.</p>';
+    }
+}
 
-loadListTimes();
+/**
+ * Carga el historial de la tarjeta usando la API de Trello.
+ * @param {string} token - El token de autorización del usuario.
+ */
+function cargarHistorial(token) {
+    contentDiv.innerHTML = '<p>Cargando historial...</p>';
+    
+    // Obtenemos el ID de la tarjeta actual
+    const cardId = t.getContext().card;
+    const url = `https://api.trello.com/1/cards/${cardId}/actions?key=${API_KEY}&token=${token}&filter=updateCard:idList`;
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                // Si la respuesta no es exitosa (ej. token inválido), lanzamos un error
+                throw new Error('Respuesta de red no fue exitosa.');
+            }
+            return response.json();
+        })
+        .then(actions => {
+            renderHistorial(actions);
+        })
+        .catch(error => {
+            console.error('Error al cargar historial:', error);
+            // Si la API falla, es posible que el token haya sido revocado.
+            // Le pedimos al usuario que re-autorice.
+            contentDiv.innerHTML = '<p>Hubo un error al cargar el historial. Por favor, intenta autorizar de nuevo.</p>';
+            mostrarBotonAutorizar();
+        });
+}
+
+
+// --- PUNTO DE ENTRADA PRINCIPAL ---
+// Esto se ejecuta cada vez que la sección trasera de la tarjeta se renderiza.
+t.render(function() {
+    // 1. Intentamos obtener el token que guardamos previamente.
+    return t.get('member', 'private', 'token')
+        .then(function(token) {
+            if (token) {
+                // 2. SI TENEMOS TOKEN: Llamamos a la función para cargar el historial.
+                cargarHistorial(token);
+            } else {
+                // 3. SI NO TENEMOS TOKEN: Mostramos el botón para autorizar.
+                mostrarBotonAutorizar();
+            }
+        })
+        .catch(function(error){
+            console.error("Error obteniendo el token:", error);
+            contentDiv.innerHTML = '<p>Ocurrió un error inesperado.</p>';
+        });
+});

@@ -1,76 +1,18 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Historial por Lista</title>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
+    <link rel="stylesheet" href="./style.css"> <!-- Tu hoja de estilos -->
+</head>
+<body>
+    <!-- Este div será llenado por nuestro script de JavaScript -->
+    <div id="content">
+        <p>Cargando...</p>
+    </div>
+
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 12px; }
-      ul  { padding-left: 20px; }
-      li  { margin: 4px 0; }
-    </style>
-  </head>
-  <body>
-    <h3>Tiempo por Lista</h3>
-    <div id="historial">Cargando historial…</div>
-
-    <script>
-      const t = TrelloPowerUp.iframe();
-      const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
-
-      // Convierte milisegundos en texto legible
-      function formatDuration(ms) {
-        const m = Math.floor(ms / 60000);
-        const h = Math.floor(m / 60);
-        const d = Math.floor(h / 24);
-        if (d) return `${d}d ${h % 24}h`;
-        if (h) return `${h}h ${m % 60}m`;
-        return `${m}m`;
-      }
-
-      async function cargarHistorial() {
-        try {
-          const token = await t.get('member', 'private', 'token');
-          if (!token) throw new Error('Sin token');
-
-          const card = await t.card('id');
-          const url  = `https://api.trello.com/1/cards/${card.id}/actions?filter=updateCard:idList,createCard&key=${API_KEY}&token=${token}`;
-          const res  = await fetch(url);
-          if (!res.ok) throw new Error('Request 401/404');
-
-          const actions = await res.json();
-          actions.sort((a,b)=> new Date(a.date)-new Date(b.date));
-
-          const movimientos = [];
-          const creacion = actions.find(a => a.type==='createCard');
-          if (!creacion) throw new Error('No se encontró creación');
-
-          let ultimaFecha = new Date(creacion.date);
-          let ultimaLista = creacion.data.list.name;
-
-          actions.filter(a=>a.type==='updateCard').forEach(a=>{
-            const fecha   = new Date(a.date);
-            movimientos.push({ lista: ultimaLista, dur: fecha - ultimaFecha });
-            ultimaFecha = fecha;
-            ultimaLista = a.data.listAfter.name;
-          });
-
-          // Tiempo en la lista actual
-          movimientos.push({ lista: `${ultimaLista} (actual)`, dur: Date.now() - ultimaFecha });
-
-          const html = '<ul>' + movimientos.map(m =>
-            `<li><strong>${m.lista}:</strong> ${formatDuration(m.dur)}</li>`
-          ).reverse().join('') + '</ul>';
-
-          document.getElementById('historial').innerHTML = html;
-          t.sizeTo('#historial');
-        } catch (err) {
-          console.error('Error cargando historial:', err);
-          document.getElementById('historial').innerText = 'Error cargando historial';
-        }
-      }
-
-      cargarHistorial();
-    </script>
-  </body>
+    <!-- Importante: Enlazamos el archivo JavaScript que contendrá la lógica -->
+    <script src="./card-back-section.js"></script>
+</body>
 </html>
