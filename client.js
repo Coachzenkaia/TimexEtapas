@@ -7,6 +7,8 @@
  * - Tiempo en lista actual
  * - Historial de tiempo en listas anteriores
  * - Colores dinámicos según duración
+ * - Configuración de horarios laborales
+ * - Nombres reales de listas
  */
 
 // ==================== FUNCIONES DE UTILIDAD ====================
@@ -15,7 +17,7 @@
  * Formatea milisegundos a formato legible (días, horas, minutos)
  */
 function formatTime(milliseconds) {
-    // Validar entrada
+    // Validar entrada para evitar NaN
     if (typeof milliseconds !== 'number' || isNaN(milliseconds) || milliseconds < 0) {
         console.warn('⚠️ formatTime: Valor inválido recibido:', milliseconds);
         return '0m';
@@ -192,12 +194,19 @@ TrelloPowerUp.initialize({
         
         return Promise.all([
             t.card('idList'),
+            t.lists('id', 'name'),
             getOrInitializeTimeData(t)
-        ]).then(function([cardInfo, timeData]) {
+        ]).then(function([cardInfo, allLists, timeData]) {
             const currentListId = cardInfo.idList;
             
+            // Encontrar el nombre de la lista actual
+            const currentList = allLists.find(list => list.id === currentListId);
+            const currentListName = currentList ? currentList.name : 'Lista actual';
+            
+            console.log(`📋 Lista actual: "${currentListName}" (${currentListId})`);
+            
             // Actualizar historial si es necesario
-            return updateListHistory(t, timeData, currentListId);
+            return updateListHistory(t, timeData, currentListId, currentListName);
         }).then(function(updatedTimeData) {
             const now = Date.now();
             let badges = [];
@@ -218,16 +227,46 @@ TrelloPowerUp.initialize({
                 color: 'green'
             });
             
-            // Badge 3+: Historial de listas anteriores
-            if (updatedTimeData.listHistory && Object.keys(updatedTimeData.listHistory).length > 0) {
-                let historyIndex = 1;
-                for (const [listId, accumulatedTime] of Object.entries(updatedTimeData.listHistory)) {
-                    badges.push({
-                        title: `Lista anterior #${historyIndex}`,
-                        text: formatTime(accumulatedTime),
-                        color: 'light-gray'
+            // Badge de CONFIGURACIÓN (¡NUEVO!)
+            badges.push({
+                title: '⚙️ Configurar TimexEtapas',
+                text: 'Horarios laborales',
+                color: 'orange',
+                callback: function(t) {
+                    console.log('⚙️ TimexEtapas: Abriendo configuración desde badge...');
+                    
+                    return t.popup({
+                        title: 'Configuración de TimexEtapas',
+                        url: './settings.html',
+                        height: 650
                     });
-                    historyIndex++;
+                }
+            });
+            
+            // Badge 3+: Historial de listas anteriores (CON NOMBRES)
+            if (updatedTimeData.listHistory && Object.keys(updatedTimeData.listHistory).length > 0) {
+                for (const [listId, listData] of Object.entries(updatedTimeData.listHistory)) {
+                    // Manejar tanto formato nuevo como antiguo
+                    let listName, accumulatedTime;
+                    
+                    if (typeof listData === 'object' && listData.name) {
+                        // Formato nuevo: { time: number, name: string }
+                        listName = listData.name;
+                        accumulatedTime = listData.time;
+                    } else {
+                        // Formato antiguo: solo el tiempo como número
+                        listName = `Lista anterior`;
+                        accumulatedTime = listData;
+                    }
+                    
+                    // Validar que accumulatedTime sea un número válido
+                    if (typeof accumulatedTime === 'number' && !isNaN(accumulatedTime) && accumulatedTime > 0) {
+                        badges.push({
+                            title: listName,
+                            text: formatTime(accumulatedTime),
+                            color: 'light-gray'
+                        });
+                    }
                 }
             }
             
@@ -247,6 +286,7 @@ TrelloPowerUp.initialize({
 
 // ==================== CONFIRMACIÓN DE CARGA ====================
 console.log('🚀 TimexEtapas Power-Up inicializado correctamente');
-console.log('📋 Funcionalidades: Tiempo en tablero, tiempo en lista, historial');
+console.log('📋 Funcionalidades: Tiempo en tablero, tiempo en lista, historial, configuración');
 console.log('🎨 Colores: Verde (0-3d), Amarillo (4-7d), Rojo (8+d)');
 console.log('🔄 Actualización automática cada 5 minutos');
+console.log('⚙️ Configuración disponible en reverso de tarjetas');
