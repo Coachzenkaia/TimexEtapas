@@ -1,11 +1,3 @@
-var onHistorialClick = function(t, opts) {
-    return t.popup({
-        title: 'TimexEtapas - Historial',
-        url: './popup.html',
-        height: 400
-    });
-};
-
 TrelloPowerUp.initialize({
     'card-badges': function(t, opts) {
         return t.card('all')
@@ -20,14 +12,13 @@ TrelloPowerUp.initialize({
                             var color = getColorByTime(timeData.totalMinutes);
                             
                             return [{
-                                icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/clock.svg',
                                 text: text,
                                 color: color
                             }];
                         }
                         return [];
                     })
-                    .catch(function(error) {
+                    .catch(function() {
                         return [];
                     });
             });
@@ -35,13 +26,12 @@ TrelloPowerUp.initialize({
     
     'card-buttons': function(t, opts) {
         return [{
-            icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/star.svg',
-            text: 'TEST',
+            text: 'TimexEtapas',
             callback: function(t) {
                 return t.popup({
-                    title: 'Funciona',
+                    title: 'Historial',
                     url: './popup.html',
-                    height: 200
+                    height: 400
                 });
             }
         }];
@@ -88,7 +78,7 @@ function initializeCardTracking(t, card) {
             
             return Promise.resolve();
         })
-        .catch(function(error) {
+        .catch(function() {
             return Promise.resolve();
         });
 }
@@ -120,7 +110,7 @@ function calculateTimeInCurrentList(t, card) {
             
             return { days: 0, hours: 0, minutes: 0, totalMinutes: 0 };
         })
-        .catch(function(error) {
+        .catch(function() {
             return { days: 0, hours: 0, minutes: 0, totalMinutes: 0 };
         });
 }
