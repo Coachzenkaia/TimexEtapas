@@ -28,13 +28,9 @@ TrelloPowerUp.initialize({
     'card-buttons': function(t, opts) {
         return [{
             icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/activity.svg',
-            text: 'Historial',
+            text: 'TimexEtapas',
             callback: function(t) {
-                return t.popup({
-                    title: 'Historial por Lista',
-                    url: './popup.html',
-                    height: 500
-                });
+                alert('¡Botón funciona!');
             }
         }];
     }
