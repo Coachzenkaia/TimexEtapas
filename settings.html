@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - TimexEtapas</title>
+    <!-- Estilos de Trello para consistencia -->
+    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f4f5f7;
+            color: #172b4d;
+        }
+        .settings-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #dfe1e6;
+            padding-bottom: 15px;
+        }
+        .header h2 {
+            color: #0079bf;
+            margin: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #5e6c84;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe1e6;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            border-color: #0079bf;
+            outline: none;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .checkbox-item input[type="checkbox"] {
+            margin: 0;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .time-inputs input {
+            flex: 1;
+        }
+        .mode-selector {
+            background: #f4f5f7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .mode-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .mode-option:last-child {
+            margin-bottom: 0;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #dfe1e6;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background: #0079bf;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #005a8b;
+        }
+        .btn-secondary {
+            background: #f4f5f7;
+            color: #5e6c84;
+        }
+        .btn-secondary:hover {
+            background: #e4e6ea;
+        }
+        .status-message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .status-success {
+            background: #e3fcef;
+            color: #006644;
+            border: 1px solid #4caf50;
+        }
+        .status-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="header">
+            <h2>⚙️ Configuración de TimexEtapas</h2>
+            <p>Personaliza cómo se calculan los tiempos en tus tarjetas</p>
+        </div>
+
+        <!-- Mensaje de estado -->
+        <div id="statusMessage" class="hidden"></div>
+
+        <form id="settingsForm">
+            <!-- Modo de cálculo -->
+            <div class="form-group">
+                <label>Modo de cálculo de tiempo</label>
+                <div class="mode-selector">
+                    <div class="mode-option">
+                        <input type="radio" id="mode24x7" name="calculationMode" value="24x7">
+                        <label for="mode24x7">
+                            <strong>24/7 Continuo</strong><br>
+                            <small>Cuenta tiempo las 24 horas, todos los días</small>
+                        </label>
+                    </div>
+                    <div class="mode-option">
+                        <input type="radio" id="modeBusinessHours" name="calculationMode" value="businessHours">
+                        <label for="modeBusinessHours">
+                            <strong>Solo horario laboral</strong><br>
+                            <small>Cuenta solo tiempo en días y horas de trabajo</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración de horario laboral -->
+            <div id="businessHoursConfig" class="form-group">
+                <label>Horario de trabajo</label>
+                <div class="time-inputs">
+                    <input type="time" id="startTime" class="form-control" value="09:00">
+                    <span>hasta</span>
+                    <input type="time" id="endTime" class="form-control" value="18:00">
+                </div>
+            </div>
+
+            <!-- Días laborales -->
+            <div id="workDaysConfig" class="form-group">
+                <label>Días laborales</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="monday" value="1">
+                        <label for="monday">Lunes</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="tuesday" value="2">
+                        <label for="tuesday">Martes</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="wednesday" value="3">
+                        <label for="wednesday">Miércoles</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="thursday" value="4">
+                        <label for="thursday">Jueves</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="friday" value="5">
+                        <label for="friday">Viernes</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="saturday" value="6">
+                        <label for="saturday">Sábado</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="sunday" value="0">
+                        <label for="sunday">Domingo</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zona horaria -->
+            <div id="timezoneConfig" class="form-group">
+                <label for="timezone">Zona horaria</label>
+                <select id="timezone" class="form-control">
+                    <option value="America/Guatemala">Guatemala (GMT-6)</option>
+                    <option value="America/Mexico_City">México Central (GMT-6)</option>
+                    <option value="America/New_York">Nueva York (GMT-5/-4)</option>
+                    <option value="America/Los_Angeles">Los Ángeles (GMT-8/-7)</option>
+                    <option value="Europe/Madrid">Madrid (GMT+1/+2)</option>
+                    <option value="Europe/London">Londres (GMT+0/+1)</option>
+                    <option value="UTC">UTC (GMT+0)</option>
+                </select>
+            </div>
+
+            <!-- Botones -->
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="saveBtn">Guardar configuración</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>
