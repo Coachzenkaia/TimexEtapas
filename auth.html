@@ -1,3 +1,4 @@
+<!-- auth.html - VERSIÓN FINAL -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,39 +11,34 @@
     </style>
 </head>
 <body>
-    <p>Por favor, autoriza el acceso a tu cuenta de Trello.</p>
+    <p>Haz clic para conectar tu cuenta de Trello.</p>
     <button id="auth-btn" class="mod-primary">Autorizar</button>
 
     <script>
-        // Obtenemos el objeto de Trello para este iframe
         const t = window.TrelloPowerUp.iframe();
+        const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
 
-        // Al hacer clic en el botón de autorizar
         document.getElementById('auth-btn').addEventListener('click', function() {
-            t.authorize({
-                type: 'popup',
-                name: 'TimexEtapas',
-                scope: {
-                    read: true, // Pedimos permiso de lectura
-                },
-                expiration: 'never', // El token no expira
-                success: function() {
-                    // Trello nos da un token temporal para guardarlo
-                    const token = t.arg('token');
-                    if (token) {
-                        // Guardamos el token de forma privada para este usuario
-                        // y luego cerramos la ventana emergente
-                        return t.set('member', 'private', 'token', token)
-                            .then(function() {
-                                return t.closePopup();
-                            });
-                    }
-                },
-                error: function() {
-                    alert('Autorización fallida. Por favor, intenta de nuevo.');
-                    t.closePopup();
-                }
-            });
+            // Este es el método correcto para pedir autorización DESDE un popup
+            t.getRestApi()
+                .authorize({
+                    requestKey: 'read', // Coincide con el 'scope' que pediremos
+                    scope: 'read',
+                    expiration: 'never',
+                })
+                .then(function(token) {
+                    // El usuario autorizó, Trello nos da el token
+                    return t.set('member', 'private', 'token', token);
+                })
+                .then(function() {
+                    // Token guardado, ahora cerramos el popup
+                    return t.closePopup();
+                })
+                .catch(function(error) {
+                    console.error('Proceso de autorización cancelado o fallido', error);
+                    // Opcional: podrías mostrar un mensaje de error antes de cerrar
+                    t.closePopup(); 
+                });
         });
     </script>
 </body>

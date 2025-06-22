@@ -1,16 +1,11 @@
-// connector.js
-
-// Tu API Key de Trello
-const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
-// El ícono de tu Power-Up
-const ICONO = './timexetapas.png';
+// connector.js - VERSIÓN FINAL
 
 window.TrelloPowerUp.initialize({
     // Capacidad: Sección en la parte trasera de la tarjeta
     'card-back-section': function (t, options) {
         return {
             title: 'Tiempo por Etapas',
-            icon: ICONO,
+            icon: './timexetapas.png',
             content: {
                 type: 'iframe',
                 url: t.signUrl('./card-back-section.html'),
@@ -20,14 +15,20 @@ window.TrelloPowerUp.initialize({
     },
 
     // Capacidad: Estado de autorización
-    // La dejamos porque es útil para que Trello sepa si mostrar o no
-    // ciertas opciones que requieran autorización.
     'authorization-status': function(t, options){
         return t.get('member', 'private', 'token')
             .then(function(token){
-                return { authorized: !!token }; // Forma corta de retornar true/false
+                return { authorized: !!token };
             });
-    }
+    },
 
-    // HEMOS ELIMINADO la capacidad 'show-authorization' porque ya no se necesita.
+    // Capacidad: Mostrar la ventana de autorización
+    // Le dice a Trello QUÉ HACER cuando nuestro código llama a t.showAuthorization()
+    'show-authorization': function(t, options){
+        return t.popup({
+            title: 'Autorizar TimexEtapas',
+            url: './auth.html', // Le decimos que abra auth.html en un popup
+            height: 140,
+        });
+    }
 });
