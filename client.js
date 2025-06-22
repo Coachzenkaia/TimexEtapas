@@ -15,6 +15,12 @@
  * Formatea milisegundos a formato legible (días, horas, minutos)
  */
 function formatTime(milliseconds) {
+    // Validar entrada
+    if (typeof milliseconds !== 'number' || isNaN(milliseconds) || milliseconds < 0) {
+        console.warn('⚠️ formatTime: Valor inválido recibido:', milliseconds);
+        return '0m';
+    }
+    
     const totalMinutes = Math.floor(milliseconds / (1000 * 60));
     const days = Math.floor(totalMinutes / (24 * 60));
     const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
@@ -86,31 +92,51 @@ function updateListHistory(t, timeData, currentListId, currentListName) {
         // Calcular tiempo en la lista anterior
         const timeInPreviousList = now - timeData.movedToCurrentListAt;
         const previousListId = timeData.currentListId;
+        const previousListName = timeData.currentListName || 'Lista anterior';
         
-        // Actualizar historial (ahora guardamos tiempo Y nombre)
-        if (!updatedData.listHistory[previousListId]) {
-            updatedData.listHistory[previousListId] = {
-                time: 0,
-                name: updatedData.currentListName || 'Lista desconocida'
-            };
+        // Validar que el tiempo sea positivo
+        if (timeInPreviousList > 0) {
+            // Inicializar historial si no existe
+            if (!updatedData.listHistory) {
+                updatedData.listHistory = {};
+            }
+            
+            // Actualizar historial con formato nuevo
+            if (!updatedData.listHistory[previousListId]) {
+                updatedData.listHistory[previousListId] = {
+                    time: 0,
+                    name: previousListName
+                };
+            }
+            
+            // Si ya existe pero es formato antiguo, convertir
+            if (typeof updatedData.listHistory[previousListId] === 'number') {
+                const oldTime = updatedData.listHistory[previousListId];
+                updatedData.listHistory[previousListId] = {
+                    time: oldTime,
+                    name: previousListName
+                };
+            }
+            
+            updatedData.listHistory[previousListId].time += timeInPreviousList;
+            updatedData.listHistory[previousListId].name = previousListName;
         }
-        updatedData.listHistory[previousListId].time += timeInPreviousList;
         
         // Actualizar datos para la nueva lista
         updatedData.currentListId = currentListId;
-        updatedData.currentListName = currentListName;
+        updatedData.currentListName = currentListName || 'Lista actual';
         updatedData.movedToCurrentListAt = now;
         
         // Guardar cambios
         return t.set('card', 'shared', 'timexEtapas', updatedData)
             .then(() => {
-                console.log(`📊 TimexEtapas: Historial actualizado. Tiempo en "${updatedData.listHistory[previousListId].name}": ${formatTime(timeInPreviousList)}`);
+                console.log(`📊 TimexEtapas: Historial actualizado. Tiempo en "${previousListName}": ${formatTime(timeInPreviousList)}`);
                 return updatedData;
             });
     } else if (!timeData.currentListId && currentListId) {
         // Primera vez que se rastrea la lista
         updatedData.currentListId = currentListId;
-        updatedData.currentListName = currentListName;
+        updatedData.currentListName = currentListName || 'Lista inicial';
         updatedData.movedToCurrentListAt = now;
         
         return t.set('card', 'shared', 'timexEtapas', updatedData)
