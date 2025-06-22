@@ -1,13 +1,39 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>TimexEtapas Power-Up</title>
+    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
   </head>
   <body>
-    <h3>Power-Up cargado correctamente</h3>
-    <p>Esta página es de control. El Power-Up se activa dentro de Trello.</p>
-    <script src="https://p.trellocdn.com/power-up.min.js"></script>
-    <script src="./connector.js"></script>
+    <script>
+      window.TrelloPowerUp.initialize({
+        'card-back-section': function(t, options) {
+          return {
+            title: 'Tiempo por Lista',
+            icon: 'https://zingy-monstera-18f958.netlify.app/timex-icon.png',
+            content: {
+              type: 'iframe',
+              url: t.signUrl('./card-back-section.html'),
+              height: 250
+            }
+          };
+        },
+        'authorization-status': function(t) {
+          return t.get('member', 'private', 'token')
+            .then(function(token) {
+              return { authorized: !!token };
+            });
+        },
+        'show-authorization': function(t) {
+          return t.popup({
+            title: 'Autorizar TimexEtapas',
+            url: './auth.html',
+            height: 140
+          });
+        }
+      });
+    </script>
   </body>
 </html>
