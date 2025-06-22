@@ -227,22 +227,6 @@ TrelloPowerUp.initialize({
                 color: 'green'
             });
             
-            // Badge de CONFIGURACIÓN (¡NUEVO!)
-            badges.push({
-                title: '⚙️ Configurar TimexEtapas',
-                text: 'Horarios laborales',
-                color: 'orange',
-                callback: function(t) {
-                    console.log('⚙️ TimexEtapas: Abriendo configuración desde badge...');
-                    
-                    return t.popup({
-                        title: 'Configuración de TimexEtapas',
-                        url: './settings.html',
-                        height: 650
-                    });
-                }
-            });
-            
             // Badge 3+: Historial de listas anteriores (CON NOMBRES)
             if (updatedTimeData.listHistory && Object.keys(updatedTimeData.listHistory).length > 0) {
                 for (const [listId, listData] of Object.entries(updatedTimeData.listHistory)) {
@@ -269,6 +253,23 @@ TrelloPowerUp.initialize({
                     }
                 }
             }
+
+            // Badge de CONFIGURACIÓN al final
+            badges.push({
+                title: '⚙️ Configurar TimexEtapas',
+                text: 'Horarios laborales',
+                color: 'orange',
+                callback: function(t) {
+                    console.log('⚙️ TimexEtapas: Abriendo configuración desde badge...');
+                    
+                    return t.popup({
+                        title: 'Configuración de TimexEtapas',
+                        url: './settings.html',
+                        height: 700,
+                        width: 500
+                    });
+                }
+            });
             
             console.log(`📊 TimexEtapas: Mostrando ${badges.length} badges detallados`);
             return badges;
