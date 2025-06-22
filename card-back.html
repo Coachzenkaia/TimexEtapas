@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TimexEtapas - Historial en Tarjeta</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 12px;
+            font-size: 13px;
+            background: white;
+        }
+        .time-summary {
+            display: flex;
+            justify-content: space-between;
+            background: #f4f5f7;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+        .time-summary .current {
+            font-weight: bold;
+            color: #0079bf;
+        }
+        .time-summary .total {
+            color: #5e6c84;
+        }
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .list-item.current {
+            background: #e4f7ff;
+            font-weight: bold;
+        }
+        .list-name {
+            flex: 1;
+            color: #172b4d;
+        }
+        .list-time {
+            color: #5e6c84;
+            font-weight: 500;
+            min-width: 60px;
+            text-align: right;
+        }
+        .list-time.long {
+            color: #d04437;
+        }
+        .loading {
+            text-align: center;
+            color: #5e6c84;
+            padding: 20px;
+        }
+        .no-data {
+            text-align: center;
+            color: #5e6c84;
+            padding: 20px;
+            font-style: italic;
+        }
+        .header {
+            font-weight: bold;
+            color: #5e6c84;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #dfe1e6;
+            padding-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <div class="loading">⏳ Cargando tiempos...</div>
+    </div>
+    
+    <script>
+        var t = TrelloPowerUp.iframe();
+        
+        t.render(function() {
+            return Promise.all([
+                t.card('all'),
+                t.lists('all')
+            ]).then(function(data) {
+                var card = data[0];
+                var lists = data[1];
+                
+                return t.get(card.id, 'shared', 'timexetapas_history', [])
+                    .then(function(history) {
+                        displayCardBackHistory(history, lists, card);
+                    });
+            }).catch(function(error) {
+                document.getElementById('content').innerHTML = 
+                    '<div class="no-data">❌ Error al cargar datos</div>';
+            });
+        });
+        
+        function displayCardBackHistory(history, lists, card) {
+            var content = document.getElementById('content');
+            
+            if (history.length === 0) {
+                content.innerHTML = '<div class="no-data">📝 Sin historial disponible</div>';
+                return;
+            }
+            
+            // Actualizar nombres de listas
+            history.forEach(function(entry) {
+                var list = lists.find(function(l) { return l.id === entry.listId; });
+                entry.listName = list ? list.name : 'Lista eliminada';
+            });
+            
+            var html = '';
+            var totalTime = 0;
+            var currentTime = 0;
+            
+            // Calcular tiempo total y tiempo actual
+            history.forEach(function(entry) {
+                var timeSpent = calculateTimeSpent(entry);
+                totalTime += timeSpent.totalMinutes;
+                
+                if (entry.listId === card.idList && !entry.endDate) {
+                    currentTime = timeSpent.totalMinutes;
+                }
+            });
+            
+            // Resumen de tiempos
+            html += '<div class="time-summary">';
+            html += '<div class="current">⏱️ Lista actual: ' + formatMinutes(currentTime) + '</div>';
+            html += '<div class="total">🕐 Total: ' + formatMinutes(totalTime) + '</div>';
+            html += '</div>';
+            
+            // Header
+            html += '<div class="header">📋 Tiempo por Lista</div>';
+            
+            // Lista de historial
+            html += '<div class="history-list">';
+            
+            // Ordenar por orden de aparición en el proceso
+            var sortedHistory = history.slice().sort(function(a, b) {
+                return new Date(a.startDate) - new Date(b.startDate);
+            });
+            
+            sortedHistory.forEach(function(entry) {
+                var timeSpent = calculateTimeSpent(entry);
+                var isCurrent = entry.listId === card.idList && !entry.endDate;
+                var timeClass = timeSpent.totalMinutes > 4320 ? 'long' : ''; // más de 3 días
+                
+                html += '<div class="list-item' + (isCurrent ? ' current' : '') + '">';
+                html += '<div class="list-name">' + entry.listName + (isCurrent ? ' (actual)' : '') + '</div>';
+                html += '<div class="list-time ' + timeClass + '">' + timeSpent.formatted + '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            
+            content.innerHTML = html;
+        }
+        
+        function calculateTimeSpent(entry) {
+            var start = new Date(entry.startDate);
+            var end = entry.endDate ? new Date(entry.endDate) : new Date();
+            var diffMs = end - start;
+            
+            var totalMinutes = Math.floor(diffMs / (1000 * 60));
+            var hours = Math.floor(totalMinutes / 60);
+            var minutes = totalMinutes % 60;
+            var days = Math.floor(hours / 24);
+            var remainingHours = hours % 24;
+            
+            var formatted;
+            if (days > 0) {
+                formatted = days + 'd ' + remainingHours + 'h';
+            } else if (hours > 0) {
+                formatted = hours + 'h ' + minutes + 'm';
+            } else {
+                formatted = minutes + 'm';
+            }
+            
+            return {
+                totalMinutes: totalMinutes,
+                formatted: formatted
+            };
+        }
+        
+        function formatMinutes(totalMinutes) {
+            var hours = Math.floor(totalMinutes / 60);
+            var minutes = totalMinutes % 60;
+            var days = Math.floor(hours / 24);
+            var remainingHours = hours % 24;
+            
+            if (days > 0) {
+                return days + 'd ' + remainingHours + 'h';
+            } else if (hours > 0) {
+                return hours + 'h ' + minutes + 'm';
+            } else {
+                return minutes + 'm';
+            }
+        }
+    </script>
+</body>
+</html>

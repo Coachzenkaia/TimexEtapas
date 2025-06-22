@@ -143,3 +143,27 @@ function getColorByTime(totalMinutes) {
     if (totalMinutes < 4320) return 'orange';   // menos de 3 días (72h)
     return 'red';                               // más de 3 días
 }
+TrelloPowerUp.initialize({
+    // ... todo tu código existente se mantiene igual ...
+    
+    'card-badges': function(t, opts) {
+        // ... tu código actual de badges ...
+    },
+    
+    'card-buttons': function(t, opts) {
+        // ... tu código actual de buttons ...
+    },
+    
+    // NUEVA FUNCIONALIDAD: Sección del reverso de la tarjeta
+    'card-back-section': function(t, opts) {
+        return {
+            title: 'TimexEtapas - Tiempo por Lista',
+            icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/clock.svg',
+            content: {
+                type: 'iframe',
+                url: t.signUrl('./card-back.html'),
+                height: 300
+            }
+        };
+    }
+});
