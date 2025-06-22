@@ -7,45 +7,57 @@ function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-window.TrelloPowerUp.iframe({}, {
+window.TrelloPowerUp.iframe({
+  appKey: '96e6f5f73e3878e9f40bd3d241f8b732',
+  appName: 'TimexEtapas Power-Up'
+}, {
   render: function(t, options) {
     const contentEl = document.getElementById('content');
 
-    return t.get('card', 'private', 'actions')
-      .then(function(actions) {
-        const cardMovements = [];
-        const creation = actions.find(a => a.type === 'createCard');
-        if (!creation) {
-          contentEl.innerHTML = '<p>No se encontró la fecha de creación.</p>';
+    return t.get('member', 'private', 'token')
+      .then(token => {
+        if (!token) {
+          contentEl.innerHTML = `<p>Este Power-Up necesita autorización para mostrar el historial.</p>`;
           return;
         }
 
-        let lastMove = new Date(creation.date);
-        let lastList = creation.data.list.name;
-        const moves = actions
-          .filter(a => a.type === 'updateCard' && a.data.listAfter && a.data.listBefore)
-          .sort((a, b) => new Date(a.date) - new Date(b.date));
+        return t.card('id')
+          .then(card => t.getRestApi().getCardActions(card.id))
+          .then(actions => {
+            const cardMovements = [];
+            const creation = actions.find(a => a.type === 'createCard');
+            if (!creation) {
+              contentEl.innerHTML = '<p>No se encontró la fecha de creación.</p>';
+              return;
+            }
 
-        moves.forEach(m => {
-          const moveDate = new Date(m.date);
-          cardMovements.push({
-            list: lastList,
-            duration: formatDuration(moveDate - lastMove)
+            let lastMove = new Date(creation.date);
+            let lastList = creation.data.list.name;
+            const moves = actions
+              .filter(a => a.type === 'updateCard' && a.data.listAfter && a.data.listBefore)
+              .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            moves.forEach(m => {
+              const moveDate = new Date(m.date);
+              cardMovements.push({
+                list: lastList,
+                duration: formatDuration(moveDate - lastMove)
+              });
+              lastMove = moveDate;
+              lastList = m.data.listAfter.name;
+            });
+
+            cardMovements.push({
+              list: `${lastList} (actual)`,
+              duration: formatDuration(new Date() - lastMove)
+            });
+
+            const html = cardMovements.map(m =>
+              `<li><strong>${m.list}:</strong> ${m.duration}</li>`
+            ).join('');
+            contentEl.innerHTML = `<ul>${html}</ul>`;
+            return t.sizeTo(contentEl);
           });
-          lastMove = moveDate;
-          lastList = m.data.listAfter.name;
-        });
-
-        cardMovements.push({
-          list: `${lastList} (actual)`,
-          duration: formatDuration(new Date() - lastMove)
-        });
-
-        const html = cardMovements.map(m =>
-          `<li><strong>${m.list}:</strong> ${m.duration}</li>`
-        ).join('');
-        contentEl.innerHTML = `<ul>${html}</ul>`;
-        return t.sizeTo(contentEl);
       });
   }
 });
