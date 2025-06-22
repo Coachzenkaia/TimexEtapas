@@ -33,16 +33,19 @@ TrelloPowerUp.initialize({
             });
     },
     
-'card-buttons': function(t, opts) {
-    console.log('card-buttons ejecutándose');
-    return [{
-        icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/star.svg',
-        text: 'TEST',
-        callback: function(t) {
-            alert('¡Funciona!');
-        }
-    }];
-}
+    'card-buttons': function(t, opts) {
+        return [{
+            icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/star.svg',
+            text: 'TEST',
+            callback: function(t) {
+                return t.popup({
+                    title: 'Funciona',
+                    url: './popup.html',
+                    height: 200
+                });
+            }
+        }];
+    }
 });
 
 function initializeCardTracking(t, card) {
