@@ -1,3 +1,11 @@
+var onHistorialClick = function(t, opts) {
+    return t.popup({
+        title: 'TimexEtapas - Historial',
+        url: './popup.html',
+        height: 400
+    });
+};
+
 TrelloPowerUp.initialize({
     'card-badges': function(t, opts) {
         return t.card('all')
@@ -28,10 +36,9 @@ TrelloPowerUp.initialize({
     'card-buttons': function(t, opts) {
         return [{
             icon: 'https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/activity.svg',
-            text: 'TimexEtapas',
-            callback: function(t) {
-                alert('¡Botón funciona!');
-            }
+            text: 'Historial',
+            callback: onHistorialClick,
+            condition: 'edit'
         }];
     }
 });
@@ -75,6 +82,9 @@ function initializeCardTracking(t, card) {
             }
             
             return Promise.resolve();
+        })
+        .catch(function(error) {
+            return Promise.resolve();
         });
 }
 
@@ -103,6 +113,9 @@ function calculateTimeInCurrentList(t, card) {
                 };
             }
             
+            return { days: 0, hours: 0, minutes: 0, totalMinutes: 0 };
+        })
+        .catch(function(error) {
             return { days: 0, hours: 0, minutes: 0, totalMinutes: 0 };
         });
 }
