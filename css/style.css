@@ -1,0 +1,29 @@
+/* TimexEtapas Styles */
+.timex-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.timex-popup {
+    max-width: 400px;
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.time-warning {
+    color: #d04437;
+}
+
+.time-caution {
+    color: #f79232;
+}
+
+.time-normal {
+    color: #14892c;
+}

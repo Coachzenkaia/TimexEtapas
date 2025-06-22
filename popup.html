@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TimexEtapas - Historial</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 15px;
+            font-size: 14px;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .list-name { font-weight: bold; }
+        .time-spent { color: #666; }
+        .current { background-color: #e4f7ff; }
+        .loading { text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <div class="loading">Cargando historial...</div>
+    </div>
+    
+    <script>
+        var t = TrelloPowerUp.iframe();
+        
+        t.render(function() {
+            return Promise.all([
+                t.card('all'),
+                t.lists('all')
+            ]).then(function(data) {
+                var card = data[0];
+                var lists = data[1];
+                
+                // Obtener historial de la tarjeta
+                return t.get(card.id, 'shared', 'listHistory', [])
+                    .then(function(history) {
+                        displayHistory(history, lists, card.idList);
+                    });
+            });
+        });
+        
+        function displayHistory(history, lists, currentListId) {
+            var content = document.getElementById('content');
+            
+            if (history.length === 0) {
+                content.innerHTML = '<p>No hay historial disponible para esta tarjeta.</p>';
+                return;
+            }
+            
+            var html = '<h3>Historial de Tiempo por Lista</h3>';
+            
+            history.forEach(function(entry) {
+                var list = lists.find(function(l) { return l.id === entry.listId; });
+                var listName = list ? list.name : 'Lista eliminada';
+                var timeSpent = calculateTimeSpent(entry);
+                var isCurrent = entry.listId === currentListId && !entry.endDate;
+                
+                html += '<div class="history-item' + (isCurrent ? ' current' : '') + '">';
+                html += '<div class="list-name">' + listName + (isCurrent ? ' (Actual)' : '') + '</div>';
+                html += '<div class="time-spent">' + timeSpent + '</div>';
+                html += '</div>';
+            });
+            
+            content.innerHTML = html;
+        }
+        
+        function calculateTimeSpent(entry) {
+            var start = new Date(entry.startDate);
+            var end = entry.endDate ? new Date(entry.endDate) : new Date();
+            var diffMs = end - start;
+            
+            var days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) return days + 'd ' + hours + 'h ' + minutes + 'm';
+            if (hours > 0) return hours + 'h ' + minutes + 'm';
+            return minutes + 'm';
+        }
+    </script>
+</body>
+</html>

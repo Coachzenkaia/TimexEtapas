@@ -2,52 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
+    <title>TimexEtapas</title>
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
-    <style>
-        body { text-align: center; padding: 20px; }
-        button { font-size: 16px; }
-    </style>
 </head>
 <body>
-    <div id="content">
-        <p>Por favor, autoriza el acceso a tu cuenta de Trello.</p>
-        <button id="auth-btn" class="mod-primary">Autorizar</button>
-    </div>
-
-    <script>
-        const t = window.TrelloPowerUp.iframe();
-        const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732'; // Tu API Key
-
-        // --- MANEJO DE LA RESPUESTA DE AUTORIZACIÓN ---
-        // Si Trello nos redirige aquí CON un token en la URL...
-        if (window.location.hash.startsWith('#token=')) {
-            // Extraemos el token de la URL
-            const token = window.location.hash.substring('#token='.length);
-            
-            // Ocultamos el botón para que el usuario no vea nada raro
-            document.getElementById('content').innerHTML = '<p>Autorización completada...</p>';
-
-            // Guardamos el token y cerramos la ventana emergente
-            t.set('member', 'private', 'token', token)
-                .then(function() {
-                    t.closePopup();
-                });
-        }
-
-        // --- INICIO DEL PROCESO DE AUTORIZACIÓN ---
-        // Si no hay token en la URL, configuramos el botón para iniciar el proceso.
-        document.getElementById('auth-btn').addEventListener('click', function() {
-            // Construimos la URL de autorización que Trello espera
-            const authUrl = `https://trello.com/1/authorize?return_url=${encodeURIComponent(window.location.href)}&expiration=never&name=TimexEtapas&scope=read&response_type=token&key=${API_KEY}`;
-
-            // Llamamos a t.authorize con la URL. Trello se encargará del resto.
-            t.authorize(authUrl)
-                .catch(function(error) {
-                    console.error("Fallo en el proceso de autorización de Trello:", error);
-                    alert("No se pudo iniciar el proceso de autorización.");
-                });
-        });
-    </script>
+    <script src="js/connector.js"></script>
 </body>
 </html>
