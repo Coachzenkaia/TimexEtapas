@@ -30,9 +30,6 @@ TrelloPowerUp.initialize({
                 }
                 
                 return [];
-            })
-            .catch(function() {
-                return [];
             });
     },
     
@@ -40,10 +37,7 @@ TrelloPowerUp.initialize({
         return [{
             text: 'TimexEtapas',
             callback: function(t) {
-                return t.popup({
-                    title: 'Historial TimexEtapas',
-                    url: './popup.html'
-                });
+                alert('¡TimexEtapas funciona! Los badges muestran tiempo desde última actividad.');
             }
         }];
     }
