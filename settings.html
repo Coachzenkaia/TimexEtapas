@@ -243,6 +243,122 @@
         </form>
     </div>
 
-    <script src="settings.js"></script>
+    <script>
+        /**
+         * TimexEtapas - Configuración integrada
+         */
+
+        // Configuración por defecto
+        const DEFAULT_SETTINGS = {
+            calculationMode: '24x7',
+            startTime: '09:00',
+            endTime: '18:00',
+            workDays: [1, 2, 3, 4, 5],
+            timezone: 'America/Guatemala'
+        };
+
+        let t;
+
+        // Esperar a que todo se cargue
+        window.addEventListener('load', function() {
+            console.log('🔧 TimexEtapas Settings: Inicializando...');
+            
+            // Inicializar Trello Power-Up
+            t = TrelloPowerUp.iframe();
+            
+            // Configurar todo
+            setTimeout(function() {
+                loadCurrentSettings();
+                setupEventListeners();
+                toggleBusinessHoursConfig();
+                console.log('✅ TimexEtapas Settings: Listo');
+            }, 500); // Dar tiempo a que Trello se inicialice
+        });
+
+        function loadCurrentSettings() {
+            return t.get('member', 'private', 'timexEtapasSettings')
+                .then(function(settings) {
+                    const config = settings || DEFAULT_SETTINGS;
+                    
+                    document.getElementById('mode24x7').checked = config.calculationMode === '24x7';
+                    document.getElementById('modeBusinessHours').checked = config.calculationMode === 'businessHours';
+                    
+                    document.getElementById('startTime').value = config.startTime;
+                    document.getElementById('endTime').value = config.endTime;
+                    document.getElementById('timezone').value = config.timezone;
+                    
+                    const workDaysCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+                    workDaysCheckboxes.forEach(checkbox => {
+                        checkbox.checked = config.workDays.includes(parseInt(checkbox.value));
+                    });
+                    
+                    console.log('✅ Configuración cargada:', config);
+                    toggleBusinessHoursConfig();
+                })
+                .catch(function(error) {
+                    console.error('❌ Error cargando configuración:', error);
+                });
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('input[name="calculationMode"]').forEach(radio => {
+                radio.addEventListener('change', toggleBusinessHoursConfig);
+            });
+            
+            document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
+            document.getElementById('cancelBtn').addEventListener('click', () => t.closePopup());
+        }
+
+        function toggleBusinessHoursConfig() {
+            const isBusinessHours = document.getElementById('modeBusinessHours').checked;
+            const businessConfig = document.getElementById('businessHoursConfig');
+            const workDaysConfig = document.getElementById('workDaysConfig');
+            const timezoneConfig = document.getElementById('timezoneConfig');
+            
+            if (isBusinessHours) {
+                businessConfig.style.display = 'block';
+                workDaysConfig.style.display = 'block';
+                timezoneConfig.style.display = 'block';
+            } else {
+                businessConfig.style.display = 'none';
+                workDaysConfig.style.display = 'none';
+                timezoneConfig.style.display = 'none';
+            }
+            
+            t.sizeTo('#settingsForm');
+        }
+
+        function handleSaveSettings(event) {
+            event.preventDefault();
+            
+            const settings = {
+                calculationMode: document.querySelector('input[name="calculationMode"]:checked').value,
+                startTime: document.getElementById('startTime').value,
+                endTime: document.getElementById('endTime').value,
+                workDays: Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                              .map(cb => parseInt(cb.value)),
+                timezone: document.getElementById('timezone').value,
+                lastUpdated: Date.now()
+            };
+            
+            t.set('member', 'private', 'timexEtapasSettings', settings)
+                .then(function() {
+                    console.log('✅ Configuración guardada:', settings);
+                    showMessage('¡Configuración guardada exitosamente!', 'success');
+                    setTimeout(() => t.closePopup(), 1500);
+                })
+                .catch(function(error) {
+                    console.error('❌ Error guardando:', error);
+                    showMessage('Error al guardar', 'error');
+                });
+        }
+
+        function showMessage(text, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = text;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.classList.remove('hidden');
+        }
+    </script>
 </body>
 </html>
