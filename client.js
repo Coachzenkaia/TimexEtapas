@@ -41,7 +41,7 @@ function getColorByTime(days) {
 /**
  * Obtiene o inicializa los datos de seguimiento de tiempo para una tarjeta
  */
-function getOrInitializeTimeData(t, currentListId = null) {
+function getOrInitializeTimeData(t, currentListId = null, currentListName = null) {
     return t.get('card', 'shared', 'timexEtapas')
         .then(function(timeData) {
             const now = Date.now();
@@ -51,6 +51,7 @@ function getOrInitializeTimeData(t, currentListId = null) {
                 const initialData = {
                     createdAt: now,
                     currentListId: currentListId,
+                    currentListName: currentListName,
                     movedToCurrentListAt: now,
                     listHistory: {},
                     version: '1.0'
@@ -74,7 +75,7 @@ function getOrInitializeTimeData(t, currentListId = null) {
 /**
  * Actualiza el historial cuando una tarjeta se mueve entre listas
  */
-function updateListHistory(t, timeData, currentListId) {
+function updateListHistory(t, timeData, currentListId, currentListName) {
     const now = Date.now();
     let updatedData = { ...timeData };
     
@@ -86,30 +87,35 @@ function updateListHistory(t, timeData, currentListId) {
         const timeInPreviousList = now - timeData.movedToCurrentListAt;
         const previousListId = timeData.currentListId;
         
-        // Actualizar historial
+        // Actualizar historial (ahora guardamos tiempo Y nombre)
         if (!updatedData.listHistory[previousListId]) {
-            updatedData.listHistory[previousListId] = 0;
+            updatedData.listHistory[previousListId] = {
+                time: 0,
+                name: updatedData.currentListName || 'Lista desconocida'
+            };
         }
-        updatedData.listHistory[previousListId] += timeInPreviousList;
+        updatedData.listHistory[previousListId].time += timeInPreviousList;
         
         // Actualizar datos para la nueva lista
         updatedData.currentListId = currentListId;
+        updatedData.currentListName = currentListName;
         updatedData.movedToCurrentListAt = now;
         
         // Guardar cambios
         return t.set('card', 'shared', 'timexEtapas', updatedData)
             .then(() => {
-                console.log(`📊 TimexEtapas: Historial actualizado. Tiempo en lista anterior: ${formatTime(timeInPreviousList)}`);
+                console.log(`📊 TimexEtapas: Historial actualizado. Tiempo en "${updatedData.listHistory[previousListId].name}": ${formatTime(timeInPreviousList)}`);
                 return updatedData;
             });
     } else if (!timeData.currentListId && currentListId) {
         // Primera vez que se rastrea la lista
         updatedData.currentListId = currentListId;
+        updatedData.currentListName = currentListName;
         updatedData.movedToCurrentListAt = now;
         
         return t.set('card', 'shared', 'timexEtapas', updatedData)
             .then(() => {
-                console.log('📋 TimexEtapas: Lista inicial registrada');
+                console.log(`📋 TimexEtapas: Lista inicial registrada: "${currentListName}"`);
                 return updatedData;
             });
     }
