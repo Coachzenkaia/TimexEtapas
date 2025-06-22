@@ -1,68 +1,57 @@
-function formatDuration(ms) {
-  const minutes = Math.floor(ms / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d ${hours % 24}h`;
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  return `${minutes}m`;
-}
+const t = TrelloPowerUp.iframe();
 
-window.TrelloPowerUp.iframe({
-  appKey: '96e6f5f73e3878e9f40bd3d241f8b732',
-  appName: 'TimexEtapas Power-Up'
-}, {
-  render: function(t, options) {
-    const contentEl = document.getElementById('content');
+const msToTime = ms => {
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((ms / (1000 * 60)) % 60);
+  return `${days}d ${hours}h ${minutes}m`;
+};
 
-    return Promise.all([
-      t.card('id'),
-      t.get('member', 'private', 'token')
-    ])
-    .then(([card, token]) => {
-      if (!token) {
-        contentEl.innerHTML = `<p>Este Power-Up necesita autorización para mostrar el historial.</p>`;
-        return;
-      }
+const loadListTimes = async () => {
+  try {
+    const card = await t.card('id', 'name', 'idList');
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'token');
 
-      // Firmamos la URL para que Trello lo acepte
-      return t.signUrl(`https://api.trello.com/1/cards/${card.id}/actions?key=96e6f5f73e3878e9f40bd3d241f8b732&token=${token}`)
-        .then(signedUrl => fetch(signedUrl))
-        .then(response => response.json())
-        .then(actions => {
-          const cardMovements = [];
-          const creation = actions.find(a => a.type === 'createCard');
-          if (!creation) {
-            contentEl.innerHTML = '<p>No se encontró la fecha de creación.</p>';
-            return;
-          }
+    const res = await fetch(`https://api.trello.com/1/cards/${card.id}/actions?filter=updateCard:idList&key=96e6f5f73e3878e9f40bd3d241f8b732&token=${token}`);
+    const actions = await res.json();
 
-          let lastMove = new Date(creation.date);
-          let lastList = creation.data.list.name;
-          const moves = actions
-            .filter(a => a.type === 'updateCard' && a.data.listAfter && a.data.listBefore)
-            .sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Ordenamos cronológicamente
+    const sorted = actions.reverse();
 
-          moves.forEach(m => {
-            const moveDate = new Date(m.date);
-            cardMovements.push({
-              list: lastList,
-              duration: formatDuration(moveDate - lastMove)
-            });
-            lastMove = moveDate;
-            lastList = m.data.listAfter.name;
-          });
+    const durations = [];
+    let lastTimestamp = new Date(card.dateLastActivity).getTime();
 
-          cardMovements.push({
-            list: `${lastList} (actual)`,
-            duration: formatDuration(new Date() - lastMove)
-          });
+    for (const action of sorted) {
+      const fromList = action.data.listBefore.name;
+      const toList = action.data.listAfter.name;
+      const timeInToList = lastTimestamp - new Date(action.date).getTime();
 
-          const html = cardMovements.map(m =>
-            `<li><strong>${m.list}:</strong> ${m.duration}</li>`
-          ).join('');
-          contentEl.innerHTML = `<ul>${html}</ul>`;
-          return t.sizeTo(contentEl);
-        });
+      durations.push({ list: toList, duration: timeInToList });
+      lastTimestamp = new Date(action.date).getTime();
+    }
+
+    // Tiempo en la lista original
+    const createdAt = new Date(1000 * parseInt(card.id.substring(0, 8), 16)).getTime();
+    durations.push({ list: sorted[0]?.data?.listBefore?.name || 'Lista de origen', duration: lastTimestamp - createdAt });
+
+    // Agrupar por lista
+    const aggregate = {};
+    durations.forEach(({ list, duration }) => {
+      aggregate[list] = (aggregate[list] || 0) + duration;
     });
+
+    const content = document.getElementById('content');
+    content.innerHTML = '<h3>Tiempo por Lista</h3><ul>' +
+      Object.entries(aggregate)
+        .map(([list, duration]) => `<li><strong>${list}:</strong> ${msToTime(duration)}</li>`)
+        .join('') +
+      '</ul>';
+
+  } catch (e) {
+    console.error('Error cargando historial:', e);
+    document.getElementById('content').innerHTML = '<p>Error cargando historial.</p>';
   }
-});
+};
+
+loadListTimes();

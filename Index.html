@@ -21,10 +21,9 @@
           };
         },
         'authorization-status': function(t) {
-          return t.get('member', 'private', 'token')
-            .then(function(token) {
-              return { authorized: !!token };
-            });
+          return t.get('member', 'private', 'token').then(function(token) {
+            return { authorized: !!token };
+          });
         },
         'show-authorization': function(t) {
           return t.popup({
@@ -32,6 +31,26 @@
             url: './auth.html',
             height: 140
           });
+        },
+        'card-buttons': function(t) {
+          return [];
+        },
+        // Esto es lo nuevo y crítico:
+        'card-badges': function(t) {
+          return [];
+        },
+        'list-actions': function(t) {
+          return [];
+        }
+      }, {
+        // Esta parte indica qué datos queremos permitir usar en el iframe
+        'card-back-section': {
+          url: './card-back-section.html',
+          args: {
+            card: 'all',
+            board: 'id',
+            actions: 'all'
+          }
         }
       });
     </script>
