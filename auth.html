@@ -1,4 +1,3 @@
-<!-- auth.html - VERSIÓN FINAL -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,37 +6,30 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <style>
         body { text-align: center; padding: 20px; }
-        button { font-size: 16px; }
+        button { font-size: 14px; }
     </style>
 </head>
 <body>
-    <p>Haz clic para conectar tu cuenta de Trello.</p>
+    <p>Conecta tu cuenta de Trello para continuar.</p>
     <button id="auth-btn" class="mod-primary">Autorizar</button>
 
     <script>
         const t = window.TrelloPowerUp.iframe();
-        const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
 
         document.getElementById('auth-btn').addEventListener('click', function() {
-            // Este es el método correcto para pedir autorización DESDE un popup
             t.getRestApi()
                 .authorize({
-                    requestKey: 'read', // Coincide con el 'scope' que pediremos
-                    scope: 'read',
-                    expiration: 'never',
+                    scope: 'read', // Pedimos permiso de solo lectura
+                    expiration: 'never' // El token no expira
                 })
                 .then(function(token) {
-                    // El usuario autorizó, Trello nos da el token
+                    // Si la autorización es exitosa, Trello nos da el token.
+                    // Lo guardamos de forma privada para el usuario.
                     return t.set('member', 'private', 'token', token);
                 })
                 .then(function() {
-                    // Token guardado, ahora cerramos el popup
+                    // Una vez guardado el token, cerramos este popup.
                     return t.closePopup();
-                })
-                .catch(function(error) {
-                    console.error('Proceso de autorización cancelado o fallido', error);
-                    // Opcional: podrías mostrar un mensaje de error antes de cerrar
-                    t.closePopup(); 
                 });
         });
     </script>

@@ -1,21 +1,23 @@
-// card-back-section.js - VERSIÓN FINAL
+// card-back-section.js
 
 const t = window.TrelloPowerUp.iframe();
-const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732';
+const API_KEY = '96e6f5f73e3878e9f40bd3d241f8b732'; // Tu API Key
 const contentDiv = document.getElementById('content');
 
+// Función que se llama cuando el usuario necesita autorizar.
 function mostrarBotonAutorizar() {
     contentDiv.innerHTML = `
-        <p>Para ver el historial, debes autorizar el Power-Up.</p>
+        <p>Para ver el historial, primero debes autorizar el Power-Up.</p>
         <button id="authorize-btn" class="mod-primary">Autorizar</button>
     `;
     document.getElementById('authorize-btn').addEventListener('click', function() {
-        // Le pedimos a Trello que se encargue de mostrar la autorización.
-        // Trello buscará la capacidad 'show-authorization' en nuestro connector.js
-        t.showAuthorization(); 
+        // Le pedimos a Trello que muestre la autorización.
+        // Trello usará la capacidad 'show-authorization' que definimos en el conector.
+        t.showAuthorization();
     });
 }
 
+// Función que muestra el historial de movimientos.
 function renderHistorial(actions) {
     const historialLista = actions.filter(a => a.type === 'updateCard' && a.data.listBefore && a.data.listAfter);
     if (historialLista.length > 0) {
@@ -31,6 +33,7 @@ function renderHistorial(actions) {
     }
 }
 
+// Función que hace la llamada a la API de Trello para obtener el historial.
 function cargarHistorial(token) {
     contentDiv.innerHTML = '<p>Cargando historial...</p>';
     const cardId = t.getContext().card;
@@ -38,8 +41,9 @@ function cargarHistorial(token) {
 
     fetch(url)
         .then(response => {
-            if (response.status === 401) { // Específicamente si el token es inválido/revocado
-                t.remove('member', 'private', 'token'); // Limpiamos el token viejo
+            // Si el token es inválido (error 401), lo borramos para que el usuario pueda autorizar de nuevo.
+            if (response.status === 401) {
+                t.remove('member', 'private', 'token');
             }
             if (!response.ok) { throw new Error('Respuesta de red no fue exitosa.'); }
             return response.json();
@@ -51,6 +55,7 @@ function cargarHistorial(token) {
         });
 }
 
+// Punto de entrada principal: se ejecuta cada vez que se carga la sección.
 t.render(function() {
     return t.get('member', 'private', 'token')
         .then(function(token) {

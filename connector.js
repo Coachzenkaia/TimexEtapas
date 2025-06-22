@@ -1,11 +1,11 @@
-// connector.js - VERSIÓN FINAL
+// connector.js
 
 window.TrelloPowerUp.initialize({
-    // Capacidad: Sección en la parte trasera de la tarjeta
+    // Capacidad #1: Añadir una sección en la parte trasera de la tarjeta.
     'card-back-section': function (t, options) {
         return {
             title: 'Tiempo por Etapas',
-            icon: './timexetapas.png',
+            icon: './timexetapas.png', // Asegúrate que este ícono exista
             content: {
                 type: 'iframe',
                 url: t.signUrl('./card-back-section.html'),
@@ -14,20 +14,22 @@ window.TrelloPowerUp.initialize({
         };
     },
 
-    // Capacidad: Estado de autorización
+    // Capacidad #2: Informar a Trello si el usuario ya está autorizado.
     'authorization-status': function(t, options){
         return t.get('member', 'private', 'token')
             .then(function(token){
-                return { authorized: !!token };
+                // Si existe un token, devolvemos { authorized: true }. Si no, false.
+                return { authorized: !!token }; 
             });
     },
 
-    // Capacidad: Mostrar la ventana de autorización
-    // Le dice a Trello QUÉ HACER cuando nuestro código llama a t.showAuthorization()
+    // Capacidad #3: Definir CÓMO se debe mostrar la autorización.
+    // Esto se ejecuta cuando nuestro código llama a t.showAuthorization().
     'show-authorization': function(t, options){
+        // Le decimos a Trello que abra nuestro archivo auth.html en un popup.
         return t.popup({
             title: 'Autorizar TimexEtapas',
-            url: './auth.html', // Le decimos que abra auth.html en un popup
+            url: './auth.html',
             height: 140,
         });
     }
